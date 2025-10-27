@@ -1,0 +1,29 @@
+# MCP Server Configuration
+
+server:
+  name: "AI Development Guidelines Server"
+  version: "1.0.0"
+  description: "Provides professional development rules, skills, and steering for AI agents"
+
+documentation:
+  rules_path: "docs/rules.md"
+  skills_path: "docs/skills.md"
+  steering_path: "docs/steering.md"
+
+ai_orchestrator:
+  model: "claude-3-5-sonnet-20241022"
+  max_tokens: 4000
+  temperature: 0.7
+
+tools:
+  - name: "get_coding_rules"
+    description: "Get professional coding rules and standards for writing production-quality code"
+  
+  - name: "get_development_skills"
+    description: "Get development skills, best practices, and professional techniques"
+  
+  - name: "get_steering_instructions"
+    description: "Get AI agent steering instructions for context-aware development"
+  
+  - name: "get_custom_guidance"
+    description: "Get AI-curated guidance tailored to your specific development context or question"
