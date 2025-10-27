@@ -1,0 +1,16 @@
+{
+  "files": {
+    "json": "docs_cache.json",
+    "json_gz": "docs_cache.json.gz",
+    "pickle": "docs_cache.pkl",
+    "pickle_gz": "docs_cache.pkl.gz"
+  },
+  "sizes": {
+    "json": 25262,
+    "json_gz": 9704,
+    "pickle": 24280,
+    "pickle_gz": 9684
+  },
+  "build_time": "2025-10-27T18:00:46.607236",
+  "version": "1.0.0"
+}

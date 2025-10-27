@@ -1,6 +1,7 @@
 """MCP Server implementation for AI development guidelines."""
 
 import asyncio
+import time
 from typing import Any
 from mcp.server import Server
 from mcp.types import Resource, Tool, TextContent, EmbeddedResource
@@ -9,15 +10,27 @@ import mcp.server.stdio
 from src.utils.config import Config
 from src.utils.document_loader import DocumentLoader
 from src.ai_orchestrator import AIOrchestrator
+from src.token_optimizer import TokenOptimizer
+from src.feedback_collector import FeedbackCollector
+from src.cache_manager import CacheManager
 
 
 class DevelopmentGuidelinesServer:
     """MCP Server that provides AI development guidelines."""
     
-    def __init__(self):
-        """Initialize the MCP server."""
+    def __init__(self, enable_feedback: bool = True, enable_cache: bool = True):
+        """
+        Initialize the MCP server.
+        
+        Args:
+            enable_feedback: Whether to enable feedback collection
+            enable_cache: Whether to enable compressed cache
+        """
         self.config = Config()
         self.doc_loader = DocumentLoader()
+        self.token_optimizer = TokenOptimizer(max_tokens=4000)
+        self.feedback_collector = FeedbackCollector() if enable_feedback else None
+        self.cache_manager = CacheManager() if enable_cache else None
         self.ai_orchestrator: AIOrchestrator | None = None
         
         try:
@@ -29,6 +42,11 @@ class DevelopmentGuidelinesServer:
         except ValueError as e:
             print(f"Warning: AI Orchestrator not initialized: {e}")
             print("The 'get_custom_guidance' tool will not be available.")
+        
+        if self.cache_manager:
+            cache_info = self.cache_manager.get_cache_info()
+            if cache_info.get("available"):
+                print(f"✓ Compressed cache loaded (version {cache_info.get('version')})")
         
         self.server = Server(self.config.server_name)
         self._setup_handlers()
@@ -145,7 +163,7 @@ class DevelopmentGuidelinesServer:
         @self.server.call_tool()
         async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             """
-            Handle tool calls.
+            Handle tool calls with feedback collection and caching.
             
             Args:
                 name: Tool name
@@ -154,54 +172,84 @@ class DevelopmentGuidelinesServer:
             Returns:
                 List of text content responses
             """
-            if name == "get_coding_rules":
-                content = self.doc_loader.get_rules(self.config.rules_path)
-                return [TextContent(type="text", text=content)]
+            start_time = time.time()
+            content = ""
+            success = True
+            error_msg = None
             
-            elif name == "get_development_skills":
-                content = self.doc_loader.get_skills(self.config.skills_path)
-                return [TextContent(type="text", text=content)]
+            try:
+                if name == "get_coding_rules":
+                    if self.cache_manager:
+                        cached = self.cache_manager.get_document("rules")
+                        content = cached if cached else self.doc_loader.get_rules(self.config.rules_path)
+                    else:
+                        content = self.doc_loader.get_rules(self.config.rules_path)
+                
+                elif name == "get_development_skills":
+                    if self.cache_manager:
+                        cached = self.cache_manager.get_document("skills")
+                        content = cached if cached else self.doc_loader.get_skills(self.config.skills_path)
+                    else:
+                        content = self.doc_loader.get_skills(self.config.skills_path)
+                
+                elif name == "get_steering_instructions":
+                    if self.cache_manager:
+                        cached = self.cache_manager.get_document("steering")
+                        content = cached if cached else self.doc_loader.get_steering(self.config.steering_path)
+                    else:
+                        content = self.doc_loader.get_steering(self.config.steering_path)
+                
+                elif name == "get_custom_guidance":
+                    query = arguments.get("query", "")
+                    context = arguments.get("context")
+                    
+                    if not query:
+                        content = "Error: 'query' parameter is required"
+                        success = False
+                    elif self.ai_orchestrator is None:
+                        content = ("AI Orchestrator is not available. Please set the ANTHROPIC_API_KEY environment variable to enable AI-powered custom guidance. "
+                                 "In the meantime, you can use the other tools (get_coding_rules, get_development_skills, get_steering_instructions) "
+                                 "to access the documentation directly.")
+                        success = False
+                    else:
+                        all_docs = self.doc_loader.get_all_docs(
+                            self.config.rules_path,
+                            self.config.skills_path,
+                            self.config.steering_path
+                        )
+                        
+                        content = self.ai_orchestrator.get_custom_guidance(
+                            query=query,
+                            rules=all_docs['rules'],
+                            skills=all_docs['skills'],
+                            steering=all_docs['steering'],
+                            context=context
+                        )
+                
+                else:
+                    raise ValueError(f"Unknown tool: {name}")
+                
+            except Exception as e:
+                content = f"Error processing request: {str(e)}"
+                success = False
+                error_msg = str(e)
             
-            elif name == "get_steering_instructions":
-                content = self.doc_loader.get_steering(self.config.steering_path)
-                return [TextContent(type="text", text=content)]
+            finally:
+                response_time_ms = (time.time() - start_time) * 1000
+                
+                if self.feedback_collector and success:
+                    tokens_used = self.token_optimizer.estimate_tokens(content)
+                    self.feedback_collector.record_call(
+                        tool_name=name,
+                        arguments=arguments,
+                        response_size=len(content),
+                        tokens_used=tokens_used,
+                        response_time_ms=response_time_ms,
+                        success=success,
+                        error=error_msg
+                    )
             
-            elif name == "get_custom_guidance":
-                query = arguments.get("query", "")
-                context = arguments.get("context")
-                
-                if not query:
-                    return [TextContent(
-                        type="text",
-                        text="Error: 'query' parameter is required"
-                    )]
-                
-                if self.ai_orchestrator is None:
-                    return [TextContent(
-                        type="text",
-                        text="AI Orchestrator is not available. Please set the ANTHROPIC_API_KEY environment variable to enable AI-powered custom guidance. "
-                             "In the meantime, you can use the other tools (get_coding_rules, get_development_skills, get_steering_instructions) "
-                             "to access the documentation directly."
-                    )]
-                
-                all_docs = self.doc_loader.get_all_docs(
-                    self.config.rules_path,
-                    self.config.skills_path,
-                    self.config.steering_path
-                )
-                
-                guidance = self.ai_orchestrator.get_custom_guidance(
-                    query=query,
-                    rules=all_docs['rules'],
-                    skills=all_docs['skills'],
-                    steering=all_docs['steering'],
-                    context=context
-                )
-                
-                return [TextContent(type="text", text=guidance)]
-            
-            else:
-                raise ValueError(f"Unknown tool: {name}")
+            return [TextContent(type="text", text=content)]
     
     async def run(self) -> None:
         """Run the MCP server."""

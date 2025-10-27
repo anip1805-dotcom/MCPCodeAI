@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-10-27T18:01:35.652132",
+  "tool_name": "get_coding_rules",
+  "arguments": {},
+  "response_size": 5513,
+  "tokens_used": 1378,
+  "response_time_ms": 0.6520748138427734,
+  "success": true,
+  "error": null,
+  "metadata": {}
+}

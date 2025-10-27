@@ -9,6 +9,10 @@ An MCP (Model Context Protocol) server that provides AI agents with professional
 - **AI Steering Instructions**: Context-aware guidance for AI agents
 - **AI Orchestration**: Intelligent document selection using Claude
 - **MCP Protocol**: Standard protocol for AI agent communication
+- **CI/CD Pipeline**: GitLab CI/CD with automated testing and deployment
+- **Token Optimization**: Monitors and optimizes token usage (~60% compression)
+- **Feedback Collection**: Tracks usage patterns and performance metrics
+- **Compressed Caching**: Efficient delivery with gzip compression (59.7% reduction)
 
 ## Architecture
 

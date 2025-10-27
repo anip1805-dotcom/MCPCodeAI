@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-10-27T18:01:35.660737",
+  "tool_name": "get_steering_instructions",
+  "arguments": {},
+  "response_size": 9960,
+  "tokens_used": 2490,
+  "response_time_ms": 0.5927085876464844,
+  "success": true,
+  "error": null,
+  "metadata": {}
+}

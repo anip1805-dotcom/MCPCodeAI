@@ -1,0 +1,44 @@
+{
+  "report_time": "2025-10-27T18:00:47.141973",
+  "version": "1.0.0",
+  "documents": {
+    "rules": {
+      "characters": 5513,
+      "estimated_tokens": 1378,
+      "lines": 158,
+      "avg_tokens_per_line": 8.721518987341772,
+      "optimization_suggestions": []
+    },
+    "skills": {
+      "characters": 8576,
+      "estimated_tokens": 2144,
+      "lines": 332,
+      "avg_tokens_per_line": 6.457831325301205,
+      "optimization_suggestions": [
+        "Many code examples (8) - consider external references"
+      ]
+    },
+    "steering": {
+      "characters": 9960,
+      "estimated_tokens": 2490,
+      "lines": 372,
+      "avg_tokens_per_line": 6.693548387096774,
+      "optimization_suggestions": [
+        "Many code examples (7) - consider external references"
+      ]
+    }
+  },
+  "summary": {
+    "total_estimated_tokens": 6012,
+    "total_characters": 24049,
+    "compression_potential": "Use gzip compression for ~60-70% reduction",
+    "caching_recommendation": "Enable client-side caching for frequently requested docs"
+  },
+  "optimization_recommendations": [
+    "Use compressed cache files (JSON.gz or pickle.gz) for delivery",
+    "Implement chunking for large documents",
+    "Cache frequently accessed documentation client-side",
+    "Consider summarization for overview requests",
+    "Use resource URIs for selective loading"
+  ]
+}
