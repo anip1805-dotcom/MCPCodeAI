@@ -22,6 +22,7 @@ args = "Test MCP Server"
 [[workflows.workflow]]
 name = "Test MCP Server"
 author = "agent"
+mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
